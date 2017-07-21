@@ -17,7 +17,6 @@ var CSV = (function() {
     function dfaParse(csv) {
         var i = 0;
         var json = '';
-        //var output = [];
         var state = initial;
 
         var header = '';
@@ -96,11 +95,18 @@ var CSV = (function() {
             switch(c) {
                 case '"':
                     return quotedQuote;
+                // TODO: technically should contain all non-space whitespace characters
                 case '\n':  // not necessary for non-string ouput
                     json += '\\n';
                     return quotedField;
                 case '\r':  // not necessary for non-string ouput
                     json += '\\r';
+                    return quotedField;
+                case '\t':  // not necessary for non-string ouput
+                    json += '\\t';
+                    return quotedField;
+                case '\\':
+                    json += '\\\\';
                     return quotedField;
                 default:
                     json += c;
