@@ -1,5 +1,10 @@
 var CSV = (function() {
 
+    /**
+     * Naive implementation.
+     *
+     * Works as long as you don't need anything escaped or quoted.
+     */
     function simpleParse(csv) {
         var lines = csv.split('\n');
         var header = lines.shift();
@@ -14,6 +19,45 @@ var CSV = (function() {
                     });
     }
 
+    /**
+     * Convert an array of objects to a CSV string
+     *
+     * Assumes:
+     * - all objects share the same keys
+     */
+    function simpleStringify(arr) {
+        if (arr.length == 0) {
+            return "";
+        }
+
+        var keys = Object.keys(arr[0]);
+        return keys.join(",") + "\n" +
+            arr.map(function(obj) {
+                return Object.values(obj).map(function(v){
+                    return typeof v === "string" ? '"' + (''+v).replace(/"/g,'""') + '"' : v
+                }).join(",");
+            }).join("\n");
+    }
+
+    /**
+     * Convert CSV to JSON string.
+     *
+     * Implements a CSV parser using a Deterministic Finite State Automata
+     * (with side-effects to build string for output).
+     *
+     * This makes the following assumptions:
+     * - header row exists
+     * - there is at least one key
+     * - all rows have same number of fields as header
+     * - headers are not quoted
+     * - headers are not empty
+     * - headers do not contain commas
+     * - headers do not contain quotes
+     * - headers do not contain quoted newlines or carriage returns
+     * - line ends with either \n or \r\n
+     * - unquoted strings do not contain floating \r
+     * - numbers (whether quoted or not) are converted to strings
+     */
     function dfaParse(csv) {
         var i = 0;
         var json = '';
@@ -23,18 +67,6 @@ var CSV = (function() {
         var keys = [];
         var keyIndex = 0;
 
-        // Assume:
-        // header row exists
-        // there is at least one key
-        // all rows have same number of fields as header
-        // headers are not quoted
-        // headers are not empty
-        // headers do not contain commas
-        // headers do not contain quotes
-        // headers do not contain quoted newlines or carriage returns
-        // line ends with either \n or \r\n
-        // unquoted strings do not contain floating \r
-        // numbers are converted to strings (whether quoted or not)
         function initial(c) {
             return readingHeader(c);
         }
@@ -126,6 +158,8 @@ var CSV = (function() {
                     return carriageReturn;
                 case '\n':
                     return endOfLine;
+                case undefined:
+                    return endOfLine(c);
                 default:
                     throw 'Ending quote followed by unexpected character at position ' + i;
             }
@@ -185,7 +219,8 @@ var CSV = (function() {
     }
 
     return {
-        parse: simpleParse,
-        parseToJSON: dfaParse
+        parse: function (csv) { return JSON.parse(dfaParse(csv)) },
+        parseToJSON: dfaParse,
+        stringify: simpleStringify
     };
 })();

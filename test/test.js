@@ -37,10 +37,22 @@
 //                     return csv;
 //                 })
                 jsonText = JSON.stringify(JSON.parse(jsonText));
-                test(csvFile.name, jsonText, function() {
-                    var csv = CSV.parseToJSON(csvText);
-                    return csv;
-                })
+                test('CSV->JSON ' + csvFile.name, jsonText, function() {
+                    var json = CSV.parseToJSON(csvText);
+                    return json;
+                });
+
+                // this fails because it doesn't preserve Number/bool types
+                //test('JSON->CSV ' + csvFile.name, csvText, function() {
+                //    var csv = CSV.stringify(JSON.parse(jsonText));
+                //    return csv;
+                //});
+
+                test('JSON->CSV ' + csvFile.name, jsonText, function() {
+                    var csv = CSV.stringify(JSON.parse(jsonText));
+                    var json = CSV.parseToJSON(csv);
+                    return json;
+                });
             };
             jsonReader.readAsText(jsonFile);
         };
